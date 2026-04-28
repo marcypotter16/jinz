@@ -3,24 +3,42 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Denim & Soul — Handmade Jeans Bags</title>
+  <title>Denim &amp; Soul — Handmade Jeans Bags</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <script src="/static/app.js" defer></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body>
 
   <!-- NAV -->
-  <header class="nav">
+  <header class="nav" x-data="{ open: false }">
     <div class="container nav__inner">
       <a href="#" class="nav__logo">Denim &amp; Soul</a>
-      <nav class="nav__links">
+
+      <!-- desktop links -->
+      <nav class="nav__links nav__links--desktop">
         <a href="#collection">Collection</a>
         <a href="#story">Our Story</a>
         <a href="#contact" class="btn btn--outline">Contact Us</a>
       </nav>
+
+      <!-- hamburger -->
+      <button class="nav__hamburger" @click="open = !open" :aria-expanded="open" aria-label="Toggle menu">
+        <span :class="open ? 'open' : ''"></span>
+        <span :class="open ? 'open' : ''"></span>
+        <span :class="open ? 'open' : ''"></span>
+      </button>
     </div>
+
+    <!-- mobile menu -->
+    <nav class="nav__mobile" x-show="open" x-transition:enter="slide-down-enter" x-transition:enter-start="slide-down-start" x-transition:enter-end="slide-down-end" x-transition:leave="slide-down-enter" x-transition:leave-start="slide-down-end" x-transition:leave-end="slide-down-start">
+      <a href="#collection" @click="open = false">Collection</a>
+      <a href="#story" @click="open = false">Our Story</a>
+      <a href="#contact" @click="open = false">Contact Us</a>
+    </nav>
   </header>
 
   <!-- HERO -->
@@ -31,10 +49,10 @@
       <p class="hero__sub">Every bag tells a story — stitched by hand from reclaimed denim, made to last a lifetime.</p>
       <a href="#collection" class="btn btn--primary">Explore the Collection</a>
     </div>
-    <div class="hero__image-placeholder">
-      <div class="placeholder-box">
-        <span>Hero photo coming soon</span>
-      </div>
+    <div class="hero__image">
+      {% if images %}
+      <img src="{{ url_for('static', filename='img/' ~ images[0]) }}" alt="Handmade denim bag" />
+      {% endif %}
     </div>
   </section>
 
@@ -66,41 +84,48 @@
     </div>
   </section>
 
-  <!-- COLLECTION -->
-  <section class="collection" id="collection">
+  <!-- COLLECTION / GALLERY -->
+  <section class="collection" id="collection"
+    data-images='{{ images | tojson }}'
+    x-data="galleryData()"
+    @keydown.escape.window="lightbox.open = false"
+    @keydown.arrow-left.window="if(lightbox.open) prev()"
+    @keydown.arrow-right.window="if(lightbox.open) next()"
+  >
     <div class="container">
       <h2 class="section-title">The Collection</h2>
-      <p class="section-sub">Photos coming soon — check back shortly.</p>
-      <div class="collection__grid">
-        <div class="product-card">
-          <div class="product-card__img placeholder-box"><span>Product photo</span></div>
-          <div class="product-card__info">
-            <h3>The Tote</h3>
-            <p>Spacious everyday carry with interior pocket.</p>
+      <p class="section-sub">Each piece is unique — click any photo to take a closer look.</p>
+
+      <div class="gallery">
+        <template x-for="(img, i) in images" :key="img">
+          <div class="gallery__item" @click="open(i)">
+            <img :src="`/static/img/${img}`" :alt="`Handmade denim bag ${i + 1}`" loading="lazy" />
+            <div class="gallery__overlay">
+              <!-- <span>View</span> -->
+            </div>
           </div>
-        </div>
-        <div class="product-card">
-          <div class="product-card__img placeholder-box"><span>Product photo</span></div>
-          <div class="product-card__info">
-            <h3>The Crossbody</h3>
-            <p>Compact and hands-free — perfect for the city.</p>
-          </div>
-        </div>
-        <div class="product-card">
-          <div class="product-card__img placeholder-box"><span>Product photo</span></div>
-          <div class="product-card__info">
-            <h3>The Mini Pouch</h3>
-            <p>Small essentials, big personality.</p>
-          </div>
-        </div>
+        </template>
       </div>
+    </div>
+
+    <!-- LIGHTBOX -->
+    <div class="lightbox" x-show="lightbox.open" x-transition:enter="fade-enter" x-transition:enter-start="fade-start" x-transition:enter-end="fade-end" x-transition:leave="fade-enter" x-transition:leave-start="fade-end" x-transition:leave-end="fade-start" @click.self="lightbox.open = false">
+      <button class="lightbox__close" @click="lightbox.open = false" aria-label="Close">&times;</button>
+      <button class="lightbox__arrow lightbox__arrow--prev" @click="prev()" aria-label="Previous">&#8592;</button>
+      <div class="lightbox__img-wrap">
+        <img :src="`/static/img/${images[lightbox.index]}`" :alt="`Photo ${lightbox.index + 1}`" />
+        <p class="lightbox__counter" x-text="`${lightbox.index + 1} / ${images.length}`"></p>
+      </div>
+      <button class="lightbox__arrow lightbox__arrow--next" @click="next()" aria-label="Next">&#8594;</button>
     </div>
   </section>
 
   <!-- STORY -->
   <section class="story" id="story">
     <div class="container story__inner">
-      <div class="story__image placeholder-box"><span>Maker photo coming soon</span></div>
+      {% if images|length > 1 %}
+      <img class="story__image" src="{{ url_for('static', filename='img/' ~ images[1]) }}" alt="The maker at work" />
+      {% endif %}
       <div class="story__text">
         <h2>Made by hand,<br/>with intention.</h2>
         <p>What started as a way to reuse a worn-out pair of jeans turned into a passion for slow fashion. Every bag is made in a small studio, with care and without hurry.</p>
@@ -109,7 +134,7 @@
     </div>
   </section>
 
-  <!-- CTA / CONTACT -->
+  <!-- CONTACT CTA -->
   <section class="contact" id="contact">
     <div class="container contact__inner">
       <h2>Want something custom?</h2>
